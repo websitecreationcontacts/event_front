@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   ChevronRight,
   Check,
@@ -35,39 +35,11 @@ import {
   getCartTotal,
   type CartItem,
 } from '../store/cartStore';
+import { saveOrder } from '../store/orderStore';
 import { useApp } from '../context/AppContext';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const SERVICE_FEE_RATE = 0.077;
-
-// ── Step indicator ────────────────────────────────────────────────────────────
-const STEPS = ['Carrito', 'Pago', 'Confirmación'];
-
-function StepBar({ current }: { current: number }) {
-  return (
-    <div className="flex items-center justify-center gap-0 py-6 mb-2">
-      {STEPS.map((label, i) => (
-        <div key={label} className="flex items-center">
-          <div className="flex flex-col items-center gap-1.5">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-colors border-2 ${
-              i < current ? 'bg-violet-600 border-violet-600 text-white' :
-              i === current ? 'bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-200' :
-              'bg-white border-gray-200 text-gray-400'
-            }`}>
-              {i < current ? <Check size={16} /> : i + 1}
-            </div>
-            <span className={`text-xs font-semibold ${i === current ? 'text-violet-700' : i < current ? 'text-violet-500' : 'text-gray-400'}`}>
-              {label}
-            </span>
-          </div>
-          {i < STEPS.length - 1 && (
-            <div className={`w-24 h-0.5 mx-2 mb-4 transition-colors ${i < current ? 'bg-violet-500' : 'bg-gray-200'}`} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 // ── Group cart items by event ─────────────────────────────────────────────────
 type EventGroup = {
@@ -99,15 +71,67 @@ function groupByEvent(cart: CartItem[]): EventGroup[] {
   return Array.from(map.values());
 }
 
+// ── Step indicator ────────────────────────────────────────────────────────────
+const STEPS = ['Carrito', 'Pago', 'Confirmación'];
+
+function StepBar({ current, onStep }: { current: number; onStep?: (step: number) => void }) {
+  return (
+    <div className="flex items-center justify-center gap-0 py-6 mb-2">
+      {STEPS.map((label, i) => {
+        const isCompleted = i < current;
+        const isActive = i === current;
+        // Allow clicking completed steps only while not on confirmation
+        const isClickable = isCompleted && !!onStep && current < 2;
+
+        return (
+          <div key={label} className="flex items-center">
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                onClick={isClickable ? () => { window.scrollTo({ top: 0, behavior: 'smooth' }); onStep(i); } : undefined}
+                disabled={!isClickable}
+                title={isClickable ? `Volver a ${label}` : undefined}
+                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all duration-200
+                  ${isCompleted
+                    ? 'bg-violet-600 border-violet-600 text-white'
+                    : isActive
+                    ? 'bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-200'
+                    : 'bg-white border-gray-200 text-gray-400'
+                  }
+                  ${isClickable ? 'cursor-pointer hover:bg-violet-700 hover:border-violet-700 hover:scale-110 active:scale-95' : 'cursor-default'}
+                `}
+              >
+                {isCompleted ? <Check size={16} /> : i + 1}
+              </button>
+              <span className={`text-xs font-semibold transition-colors ${
+                isActive ? 'text-violet-700' : isCompleted ? 'text-violet-500' : 'text-gray-400'
+              } ${isClickable ? 'cursor-pointer hover:text-violet-700' : ''}`}
+                onClick={isClickable ? () => { window.scrollTo({ top: 0, behavior: 'smooth' }); onStep!(i); } : undefined}
+              >
+                {label}
+              </span>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div className={`w-24 h-0.5 mx-2 mb-4 transition-colors duration-300 ${i < current ? 'bg-violet-500' : 'bg-gray-200'}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Order summary sidebar ─────────────────────────────────────────────────────
-function OrderSummary({ groups, showTrust = false }: { groups: EventGroup[]; showTrust?: boolean }) {
-  const subtotal = getCartTotal();
-  const fee = Math.round(subtotal * SERVICE_FEE_RATE * 100) / 100;
+function OrderSummary({ groups, subtotal, fee, showTrust = false }: {
+  groups: EventGroup[];
+  subtotal: number;
+  fee: number;
+  showTrust?: boolean;
+}) {
   const total = subtotal + fee;
   const totalItems = groups.reduce((s, g) => s + g.items.reduce((ss, i) => ss + i.quantity, 0), 0);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-24">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
       <h2 className="text-base font-bold text-gray-900 mb-4">Resumen de Compra</h2>
 
       {/* Events mini list */}
@@ -199,7 +223,7 @@ function CartStep({ groups, onRefresh, onContinue }: {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="flex flex-col lg:flex-row gap-6 items-start">
       {/* LEFT — cart items */}
       <div className="flex-1 min-w-0 space-y-4">
         <div className="flex items-center justify-between">
@@ -269,9 +293,9 @@ function CartStep({ groups, onRefresh, onContinue }: {
         </Link>
       </div>
 
-      {/* RIGHT sidebar */}
-      <div className="lg:w-80 xl:w-88 flex-shrink-0 space-y-4">
-        <OrderSummary groups={groups} showTrust />
+      {/* RIGHT sticky sidebar */}
+      <div className="lg:w-80 xl:w-88 flex-shrink-0 sticky top-24 self-start space-y-4">
+        <OrderSummary groups={groups} subtotal={subtotal} fee={fee} showTrust />
         <button
           onClick={onContinue}
           className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-violet-200 transition-all"
@@ -301,8 +325,10 @@ function detectBrand(num: string): 'visa' | 'mastercard' | 'amex' | null {
 }
 
 // ── STEP 2: Payment ───────────────────────────────────────────────────────────
-function PaymentStep({ groups, onBack, onPay }: {
+function PaymentStep({ groups, subtotal, fee, onBack, onPay }: {
   groups: EventGroup[];
+  subtotal: number;
+  fee: number;
   onBack: () => void;
   onPay: (contact: { name: string; email: string; phone: string }) => void;
 }) {
@@ -317,8 +343,6 @@ function PaymentStep({ groups, onBack, onPay }: {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const brand = detectBrand(cardNum);
-  const subtotal = getCartTotal();
-  const fee = Math.round(subtotal * SERVICE_FEE_RATE * 100) / 100;
   const total = subtotal + fee;
 
   function validate() {
@@ -347,7 +371,7 @@ function PaymentStep({ groups, onBack, onPay }: {
     `w-full px-3 py-2.5 border rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-colors ${errors[f] ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-violet-500'}`;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
+    <div className="flex flex-col lg:flex-row gap-6 items-start">
       <div className="flex-1 min-w-0 space-y-5">
         <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-violet-600 font-medium transition-colors">
           <ChevronLeft size={16} />Volver al carrito
@@ -446,8 +470,9 @@ function PaymentStep({ groups, onBack, onPay }: {
         </div>
       </div>
 
-      <div className="lg:w-80 xl:w-88 flex-shrink-0 space-y-4">
-        <OrderSummary groups={groups} />
+      {/* RIGHT sticky sidebar */}
+      <div className="lg:w-80 xl:w-88 flex-shrink-0 sticky top-24 self-start space-y-4">
+        <OrderSummary groups={groups} subtotal={subtotal} fee={fee} />
         <button
           onClick={handlePay}
           disabled={processing}
@@ -468,13 +493,13 @@ function PaymentStep({ groups, onBack, onPay }: {
 }
 
 // ── STEP 3: Confirmation ──────────────────────────────────────────────────────
-function ConfirmationStep({ groups, contact, orderRef }: {
+function ConfirmationStep({ groups, contact, orderRef, subtotal, fee }: {
   groups: EventGroup[];
   contact: { name: string; email: string; phone: string };
   orderRef: string;
+  subtotal: number;
+  fee: number;
 }) {
-  const subtotal = getCartTotal();
-  const fee = Math.round(subtotal * SERVICE_FEE_RATE * 100) / 100;
   const total = subtotal + fee;
   const totalItems = groups.reduce((s, g) => s + g.items.reduce((ss, i) => ss + i.quantity, 0), 0);
   const firstEventId = groups[0]?.eventId ?? '';
@@ -584,12 +609,14 @@ function AuthGate({ userRole }: { userRole: 'client' | 'company' | null }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
   const { isLoggedIn, userRole, refreshCartCount } = useApp();
-  const navigate = useNavigate();
 
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [cart, setCart] = useState<CartItem[]>(() => getCart());
   const [contact, setContact] = useState({ name: '', email: '', phone: '' });
   const [orderRef] = useState(() => 'EH-' + Math.random().toString(36).substring(2, 8).toUpperCase());
+  // Captured before cart is cleared
+  const [savedSubtotal, setSavedSubtotal] = useState(0);
+  const [savedFee, setSavedFee] = useState(0);
 
   const groups = groupByEvent(cart);
 
@@ -598,6 +625,38 @@ export default function CheckoutPage() {
   }
 
   function handlePay(c: { name: string; email: string; phone: string }) {
+    const subtotal = getCartTotal();
+    const fee = Math.round(subtotal * SERVICE_FEE_RATE * 100) / 100;
+
+    // Persist order linked to email
+    saveOrder({
+      id: Date.now().toString(),
+      orderRef,
+      email: c.email,
+      name: c.name,
+      phone: c.phone,
+      date: new Date().toISOString(),
+      events: groups.map(g => ({
+        eventId: g.eventId,
+        eventTitle: g.eventTitle,
+        eventDate: g.eventDate,
+        eventVenue: g.eventVenue,
+        eventCity: g.eventCity,
+        eventImage: g.eventImage,
+        items: g.items.map(i => ({
+          ticketId: i.ticketId,
+          ticketName: i.ticketName,
+          ticketPrice: i.ticketPrice,
+          quantity: i.quantity,
+        })),
+      })),
+      subtotal,
+      fee,
+      total: subtotal + fee,
+    });
+
+    setSavedSubtotal(subtotal);
+    setSavedFee(fee);
     setContact(c);
     setStep(2);
     clearCart();
@@ -605,7 +664,8 @@ export default function CheckoutPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // Show auth gate if not logged in or is company
+  const liveSubtotal = getCartTotal();
+  const liveFee = Math.round(liveSubtotal * SERVICE_FEE_RATE * 100) / 100;
   const needsAuth = !isLoggedIn || userRole === 'company';
 
   return (
@@ -629,7 +689,10 @@ export default function CheckoutPage() {
           </>
         ) : (
           <>
-            <StepBar current={step} />
+            <StepBar
+              current={step}
+              onStep={(s) => setStep(s as 0 | 1 | 2)}
+            />
 
             {step === 0 && (
               <CartStep
@@ -645,12 +708,20 @@ export default function CheckoutPage() {
             {step === 1 && (
               <PaymentStep
                 groups={groups}
+                subtotal={liveSubtotal}
+                fee={liveFee}
                 onBack={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setStep(0); }}
                 onPay={handlePay}
               />
             )}
             {step === 2 && (
-              <ConfirmationStep groups={groups} contact={contact} orderRef={orderRef} />
+              <ConfirmationStep
+                groups={groups}
+                contact={contact}
+                orderRef={orderRef}
+                subtotal={savedSubtotal}
+                fee={savedFee}
+              />
             )}
           </>
         )}

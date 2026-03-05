@@ -26,6 +26,7 @@ import {
 import Footer from '../components/Footer';
 import { navLinks, mockUser, userTickets, type UserTicket } from '../data/mock';
 import { useApp } from '../context/AppContext';
+import { getOrdersByEmail, type Order, type OrderEvent } from '../store/orderStore';
 
 // ── Event meta by eventId ──────────────────────────────────────────────────────
 const eventMeta: Record<string, {
@@ -189,13 +190,61 @@ function UserNavbar() {
   );
 }
 
+// ── Build tickets from a real order event ────────────────────────────────────
+const ORDER_COLORS = ['bg-violet-500','bg-blue-500','bg-green-500','bg-orange-500','bg-pink-500'];
+
+function buildOrderTickets(orderForEvent: Order, ev: OrderEvent): UserTicket[] {
+  const colorIdx = ev.eventId.charCodeAt(0) % ORDER_COLORS.length;
+  return ev.items.flatMap((item) =>
+    Array.from({ length: item.quantity }, (_, q) => ({
+      id: `${orderForEvent.id}-${item.ticketId}-${q}`,
+      ticketRef: `#${orderForEvent.orderRef}-${String(q + 1).padStart(3, '0')}`,
+      eventId: ev.eventId,
+      eventTitle: ev.eventTitle,
+      iconColor: ORDER_COLORS[colorIdx],
+      iconLetter: ev.eventTitle.slice(0, 2).toUpperCase(),
+      date: ev.eventDate,
+      zone: item.ticketName,
+      type: item.ticketName,
+      price: item.ticketPrice,
+      status: 'activo' as const,
+    }))
+  );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function TicketDetailPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const { showToast } = useApp();
 
-  const tickets: UserTicket[] = userTickets.filter((t) => t.eventId === eventId);
+  // Hooks must be unconditional — declare before any early return
+  const [current, setCurrent] = useState(0);
+
+  // 1. Try mock tickets
+  const mockTickets: UserTicket[] = userTickets.filter((t) => t.eventId === eventId);
+
+  // 2. Try real order tickets
+  let orderForEvent: Order | null = null;
+  let orderEvent: OrderEvent | null = null;
+  if (mockTickets.length === 0) {
+    const orders = getOrdersByEmail(mockUser.email);
+    outer: for (const o of orders) {
+      for (const ev of o.events) {
+        if (ev.eventId === eventId) {
+          orderForEvent = o;
+          orderEvent = ev;
+          break outer;
+        }
+      }
+    }
+  }
+
+  const orderTickets = orderForEvent && orderEvent
+    ? buildOrderTickets(orderForEvent, orderEvent)
+    : [];
+
+  const tickets: UserTicket[] = mockTickets.length > 0 ? mockTickets : orderTickets;
 
   if (tickets.length === 0) {
     return (
@@ -212,8 +261,22 @@ export default function TicketDetailPage() {
     );
   }
 
-  const meta = eventMeta[eventId ?? ''];
-  const [current, setCurrent] = useState(0);
+  // Build meta: from mock lookup or from order event
+  const meta = mockTickets.length > 0
+    ? eventMeta[eventId ?? '']
+    : orderEvent
+    ? {
+        venue: orderEvent.eventVenue,
+        city: orderEvent.eventCity,
+        address: `${orderEvent.eventVenue}, ${orderEvent.eventCity}`,
+        date: orderEvent.eventDate,
+        time: '',
+        image: orderEvent.eventImage,
+        gradient: 'from-violet-600 to-purple-700',
+        purchaseDate: new Date(orderForEvent!.date).toLocaleDateString('es-ES'),
+      }
+    : undefined;
+
   const ticket = tickets[current];
   const isActive = ticket.status === 'activo';
 
