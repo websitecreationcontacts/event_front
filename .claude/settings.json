@@ -19,7 +19,10 @@
       "Bash(cmdkey /list)",
       "Bash(gh repo clone websitecreationcontacts/event_front)",
       "Bash(winget install --id GitHub.cli --accept-source-agreements --accept-package-agreements)",
-      "Bash(gh auth login --web --git-protocol https)"
+      "Bash(gh auth login --web --git-protocol https)",
+      "Bash(cmdkey /delete:LegacyGeneric:target=git:https://github.com)",
+      "Bash(cmdkey /delete:LegacyGeneric:target=https://github.com)",
+      "Bash(git credential:*)"
     ]
   }
 }
