@@ -698,6 +698,7 @@ export const mockCompanyCredentials = {
   password: 'empresa123',
 };
 
+
 export const companyStats = {
   eventosActivos: 4,
   ticketsVendidos: 1284,
