@@ -9,7 +9,17 @@
       "Bash(npm run dev)",
       "Bash(start http://localhost:5173)",
       "Bash(npm install react-router-dom)",
-      "Bash(xargs sed -i 's/<Footer variant=\"\"full\"\" \\\\/>/<Footer \\\\/>/g; s/<Footer variant=\"\"home\"\" \\\\/>/<Footer \\\\/>/g')"
+      "Bash(xargs sed -i 's/<Footer variant=\"\"full\"\" \\\\/>/<Footer \\\\/>/g; s/<Footer variant=\"\"home\"\" \\\\/>/<Footer \\\\/>/g')",
+      "Bash(gh auth status)",
+      "Bash(git --version)",
+      "Bash(git config --global user.name)",
+      "Bash(git config --global user.email)",
+      "Bash(git config --global credential.helper)",
+      "Bash(git config --list --global)",
+      "Bash(cmdkey /list)",
+      "Bash(gh repo clone websitecreationcontacts/event_front)",
+      "Bash(winget install --id GitHub.cli --accept-source-agreements --accept-package-agreements)",
+      "Bash(gh auth login --web --git-protocol https)"
     ]
   }
 }
