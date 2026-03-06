@@ -8,8 +8,13 @@
   }
 
   body {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Poppins', system-ui, sans-serif;
     @apply text-gray-900 bg-white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-weight: 700;
   }
 }
 
@@ -18,16 +23,49 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes button-hover {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-3px); }
+}
+
+@keyframes button-glow {
+  0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7); }
+  50% { box-shadow: 0 0 0 8px rgba(124, 58, 237, 0); }
+}
+
 .animate-slide-in {
   animation: slide-in 0.25s ease-out;
 }
 
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg);   opacity: 1; }
+  80%  { opacity: 0.7; }
+  100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
+}
+
+/* Cursive gradient accent for section titles */
+.title-accent {
+  font-family: 'Dancing Script', cursive;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 @layer components {
   .btn-primary {
-    @apply bg-violet-600 hover:bg-violet-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200;
+    @apply bg-violet-600 hover:bg-violet-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg;
+  }
+
+  .btn-primary:hover {
+    animation: button-hover 0.3s ease-out forwards;
   }
 
   .btn-outline {
-    @apply border border-violet-600 text-violet-600 hover:bg-violet-50 font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200;
+    @apply border border-violet-600 text-violet-600 hover:bg-violet-50 font-semibold px-5 py-2.5 rounded-lg transition-all duration-300;
+  }
+
+  .btn-outline:hover {
+    animation: button-hover 0.3s ease-out forwards;
   }
 }

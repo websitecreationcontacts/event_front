@@ -112,7 +112,7 @@ export default function CalendarioPage() {
       <section className="bg-gradient-to-r from-violet-700 to-purple-600 px-8 py-14">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">Calendario de Eventos</h1>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">Calendario de <span style={{ fontFamily: "'Dancing Script', cursive", background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Eventos</span></h1>
             <p className="text-white/75 text-sm">Planifica tu agenda y no te pierdas ningún evento</p>
           </div>
           {/* View toggle */}

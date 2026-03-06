@@ -151,7 +151,7 @@ export default function ContactoPage() {
       <section className="bg-gradient-to-r from-violet-700 to-purple-600 px-8 py-14">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2">
-            Contacto y Soporte
+            Contacto y <span style={{ fontFamily: "'Dancing Script', cursive", background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Soporte</span>
           </h1>
           <p className="text-white/75 text-base">¿Necesitas ayuda? Estamos aquí para apoyarte</p>
         </div>
@@ -337,7 +337,7 @@ export default function ContactoPage() {
       <section className="py-14 px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Preguntas Frecuentes</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Preguntas <span className="title-accent">Frecuentes</span></h2>
             <p className="text-gray-500 text-sm">Respuestas rápidas a las consultas más comunes</p>
           </div>
 

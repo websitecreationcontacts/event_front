@@ -20,6 +20,17 @@ import {
   Eye,
   ArrowUpRight,
   Wallet,
+  Save,
+  Building2,
+  Lock,
+  AlertTriangle,
+  CreditCard,
+  Globe,
+  Mail,
+  Phone,
+  MapPin,
+  Shield,
+  Check,
 } from 'lucide-react';
 import {
   mockCompany,
@@ -36,7 +47,6 @@ const sidebarLinks = [
   { icon: <CalendarDays size={18} />, label: 'Mis Eventos', id: 'eventos' },
   { icon: <TicketCheck size={18} />, label: 'Ventas', id: 'ventas' },
   { icon: <BarChart3 size={18} />, label: 'Analytics', id: 'analytics' },
-  { icon: <Users size={18} />, label: 'Equipo', id: 'equipo' },
   { icon: <Settings size={18} />, label: 'Configuración', id: 'config' },
 ];
 
@@ -133,8 +143,7 @@ export default function CompanyDashboardPage() {
     eventos:   <EventosSection filter={eventFilter} setFilter={setEventFilter} events={filteredEvents} showToast={showToast} />,
     ventas:    <VentasSection />,
     analytics: <AnalyticsSection events={allEvents} />,
-    equipo:    <PlaceholderSection label="Equipo" icon={<Users size={32} />} />,
-    config:    <PlaceholderSection label="Configuración" icon={<Settings size={32} />} />,
+    config:    <ConfigSection />,
   };
 
   return (
@@ -516,7 +525,33 @@ function EventosSection({ filter, setFilter, events, showToast }: {
 }
 
 // ── Ventas section ────────────────────────────────────────────────────────────
+const uniqueEvents = ['Todos los eventos', ...Array.from(new Set(companySales.map((s) => s.event)))];
+
+function matchesPeriod(date: string, period: string) {
+  if (period === 'todos') return true;
+  const d = date.toLowerCase();
+  if (period === 'hoy') return d.includes('min') || (d.includes('h') && !d.includes('hora') && !d.includes('ayer'));
+  if (period === 'ayer') return d.includes('ayer') || d.includes('min') || d.includes('h');
+  return true; // 'semana' = all
+}
+
 function VentasSection() {
+  const [search, setSearch] = useState('');
+  const [eventFilter, setEventFilter] = useState('Todos los eventos');
+  const [statusFilter, setStatusFilter] = useState('todos');
+  const [periodFilter, setPeriodFilter] = useState('todos');
+
+  const filtered = companySales.filter((s) => {
+    const q = search.toLowerCase();
+    const matchSearch = q === '' || s.buyer.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.event.toLowerCase().includes(q);
+    const matchEvent = eventFilter === 'Todos los eventos' || s.event === eventFilter;
+    const matchStatus = statusFilter === 'todos' || s.status === statusFilter;
+    const matchPeriod = matchesPeriod(s.date, periodFilter);
+    return matchSearch && matchEvent && matchStatus && matchPeriod;
+  });
+
+  const totalFiltered = filtered.reduce((acc, s) => acc + (s.status !== 'reembolsado' ? s.amount : 0), 0);
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -541,6 +576,80 @@ function VentasSection() {
         ))}
       </div>
 
+      {/* ── Filters ── */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[180px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar comprador, email..."
+              className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-violet-400 transition-colors"
+            />
+          </div>
+
+          {/* Event filter */}
+          <div className="relative">
+            <select
+              value={eventFilter}
+              onChange={(e) => setEventFilter(e.target.value)}
+              className="appearance-none text-sm bg-gray-50 border border-gray-200 text-gray-700 pl-3 pr-8 py-2 rounded-lg cursor-pointer hover:border-violet-400 focus:outline-none focus:border-violet-500 transition-colors font-medium"
+            >
+              {uniqueEvents.map((ev) => <option key={ev} value={ev}>{ev}</option>)}
+            </select>
+            <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          {/* Status filter */}
+          <div className="relative">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="appearance-none text-sm bg-gray-50 border border-gray-200 text-gray-700 pl-3 pr-8 py-2 rounded-lg cursor-pointer hover:border-violet-400 focus:outline-none focus:border-violet-500 transition-colors font-medium"
+            >
+              <option value="todos">Todos los estados</option>
+              <option value="completado">Completado</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="reembolsado">Reembolsado</option>
+            </select>
+            <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          {/* Period filter */}
+          <div className="relative">
+            <select
+              value={periodFilter}
+              onChange={(e) => setPeriodFilter(e.target.value)}
+              className="appearance-none text-sm bg-gray-50 border border-gray-200 text-gray-700 pl-3 pr-8 py-2 rounded-lg cursor-pointer hover:border-violet-400 focus:outline-none focus:border-violet-500 transition-colors font-medium"
+            >
+              <option value="todos">Cualquier fecha</option>
+              <option value="hoy">Hoy</option>
+              <option value="ayer">Ayer y hoy</option>
+              <option value="semana">Esta semana</option>
+            </select>
+            <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          {/* Results count + reset */}
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-xs text-gray-400">
+              <span className="font-bold text-gray-700">{filtered.length}</span> resultado{filtered.length !== 1 ? 's' : ''} · <span className="font-bold text-green-600">€{totalFiltered}</span>
+            </span>
+            {(search || eventFilter !== 'Todos los eventos' || statusFilter !== 'todos' || periodFilter !== 'todos') && (
+              <button
+                onClick={() => { setSearch(''); setEventFilter('Todos los eventos'); setStatusFilter('todos'); setPeriodFilter('todos'); }}
+                className="text-xs text-violet-600 hover:text-violet-800 font-semibold transition-colors"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Sales table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
@@ -555,7 +664,7 @@ function VentasSection() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {companySales.map((sale) => (
+            {filtered.length > 0 ? filtered.map((sale) => (
               <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2.5">
@@ -586,7 +695,11 @@ function VentasSection() {
                   <SaleBadge status={sale.status} />
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan={6} className="text-center py-12 text-sm text-gray-400">No hay ventas para los filtros seleccionados</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -892,12 +1005,294 @@ function AnalyticsSection({ events }: { events: CompanyEvent[] }) {
   );
 }
 
-// ── Placeholder for unbuilt sections ──────────────────────────────────────────
-function PlaceholderSection({ label, icon }: { label: string; icon: React.ReactNode }) {
+// ── Config section ─────────────────────────────────────────────────────────────
+function ConfigSection() {
+  const [tab, setTab] = useState<'empresa' | 'plan' | 'notif' | 'seguridad'>('empresa');
+  const [saved, setSaved] = useState(false);
+
+  // Empresa form state
+  const [form, setForm] = useState({
+    name:   mockCompany.name,
+    email:  mockCompany.email,
+    phone:  mockCompany.phone,
+    city:   mockCompany.city,
+    sector: mockCompany.sector,
+    cif:    mockCompany.cif,
+    web:    'www.infinityevents.es',
+  });
+
+  // Notif toggles
+  const [notif, setNotif] = useState({
+    nuevaVenta:     true,
+    recordatorio:   true,
+    resumenSemanal: false,
+    alertaStock:    true,
+    newsletter:     false,
+  });
+
+  // Password form
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
+  const [pwMsg, setPwMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  }
+
+  function handlePwSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pwForm.current) { setPwMsg({ type: 'err', text: 'Introduce tu contraseña actual.' }); return; }
+    if (pwForm.next.length < 8) { setPwMsg({ type: 'err', text: 'La nueva contraseña debe tener al menos 8 caracteres.' }); return; }
+    if (pwForm.next !== pwForm.confirm) { setPwMsg({ type: 'err', text: 'Las contraseñas no coinciden.' }); return; }
+    setPwMsg({ type: 'ok', text: 'Contraseña actualizada correctamente.' });
+    setPwForm({ current: '', next: '', confirm: '' });
+    setTimeout(() => setPwMsg(null), 3000);
+  }
+
+  const tabs = [
+    { id: 'empresa',   label: 'Empresa',       icon: <Building2 size={15} /> },
+    { id: 'plan',      label: 'Plan',           icon: <CreditCard size={15} /> },
+    { id: 'notif',     label: 'Notificaciones', icon: <Bell size={15} /> },
+    { id: 'seguridad', label: 'Seguridad',      icon: <Shield size={15} /> },
+  ] as const;
+
   return (
-    <div className="flex flex-col items-center justify-center h-64 text-gray-300 gap-3">
-      {icon}
-      <p className="text-base font-semibold">{label} — próximamente</p>
+    <div className="space-y-6 max-w-3xl">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-extrabold text-gray-900">Configuración</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Gestiona los datos y preferencias de tu cuenta</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              tab === t.id ? 'bg-white text-violet-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Tab: Empresa ── */}
+      {tab === 'empresa' && (
+        <form onSubmit={handleSave} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+          <h2 className="text-base font-bold text-gray-900">Datos de la Empresa</h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { label: 'Nombre de la empresa', key: 'name',   icon: <Building2 size={14} />, placeholder: 'Nombre' },
+              { label: 'CIF / NIF',            key: 'cif',    icon: <Shield size={14} />,    placeholder: 'B-12345678' },
+              { label: 'Email de contacto',    key: 'email',  icon: <Mail size={14} />,      placeholder: 'email@empresa.es', type: 'email' },
+              { label: 'Teléfono',             key: 'phone',  icon: <Phone size={14} />,     placeholder: '+34 91 000 00 00' },
+              { label: 'Ciudad',               key: 'city',   icon: <MapPin size={14} />,    placeholder: 'Ciudad' },
+              { label: 'Sector',               key: 'sector', icon: <Building2 size={14} />, placeholder: 'Sector' },
+              { label: 'Sitio web',            key: 'web',    icon: <Globe size={14} />,     placeholder: 'www.empresa.es' },
+            ].map(({ label, key, icon, placeholder, type }) => (
+              <div key={key} className={key === 'web' ? 'sm:col-span-2' : ''}>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">{label}</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</span>
+                  <input
+                    type={type ?? 'text'}
+                    value={(form as Record<string, string>)[key]}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-400">Miembro desde {mockCompany.memberSince}</p>
+            <button
+              type="submit"
+              className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
+            >
+              {saved ? <><Check size={15} /> Guardado</> : <><Save size={15} /> Guardar cambios</>}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ── Tab: Plan ── */}
+      {tab === 'plan' && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">Plan Actual</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Tu suscripción activa</p>
+              </div>
+              <span className="bg-violet-100 text-violet-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">{mockCompany.plan}</span>
+            </div>
+            <div className="space-y-2.5">
+              {[
+                'Eventos ilimitados',
+                'Hasta 10.000 tickets/mes',
+                'Analytics avanzado',
+                'Soporte prioritario por email',
+                'API de integración',
+              ].map((feat) => (
+                <div key={feat} className="flex items-center gap-2 text-sm text-gray-700">
+                  <Check size={14} className="text-green-500 flex-shrink-0" />
+                  {feat}
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400">Próxima factura</p>
+                <p className="text-sm font-bold text-gray-800">1 de abril 2026 · <span className="text-violet-600">€49/mes</span></p>
+              </div>
+              <button className="text-sm font-semibold text-violet-600 hover:text-violet-800 transition-colors">
+                Gestionar suscripción →
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { name: 'Básico',    price: '€19/mes', features: ['5 eventos/mes', '500 tickets/mes', 'Soporte email'] },
+              { name: 'Pro',       price: '€49/mes', features: ['Eventos ilimitados', '10k tickets/mes', 'Analytics + API'], current: true },
+              { name: 'Enterprise',price: 'A medida', features: ['Sin límites', 'SLA garantizado', 'Account manager'] },
+            ].map((plan) => (
+              <div
+                key={plan.name}
+                className={`rounded-2xl border p-5 ${plan.current ? 'border-violet-400 bg-violet-50' : 'border-gray-100 bg-white'}`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <p className="font-bold text-gray-900 text-sm">{plan.name}</p>
+                  {plan.current && <span className="text-[10px] font-bold bg-violet-600 text-white px-2 py-0.5 rounded-full">Actual</span>}
+                </div>
+                <p className="text-lg font-extrabold text-violet-700 mb-3">{plan.price}</p>
+                <ul className="space-y-1 mb-4">
+                  {plan.features.map((f) => (
+                    <li key={f} className="text-xs text-gray-600 flex items-center gap-1.5">
+                      <Check size={11} className="text-green-500" />{f}
+                    </li>
+                  ))}
+                </ul>
+                {!plan.current && (
+                  <button className="w-full text-xs font-bold border border-violet-300 text-violet-700 hover:bg-violet-50 py-1.5 rounded-lg transition-colors">
+                    {plan.name === 'Enterprise' ? 'Contactar' : 'Cambiar plan'}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Tab: Notificaciones ── */}
+      {tab === 'notif' && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="text-base font-bold text-gray-900">Preferencias de Notificación</h2>
+          <p className="text-xs text-gray-500">Elige qué notificaciones quieres recibir por email.</p>
+          <div className="space-y-3 pt-1">
+            {[
+              { key: 'nuevaVenta',     label: 'Nueva venta',         desc: 'Recibe un email cada vez que alguien compra una entrada.' },
+              { key: 'recordatorio',   label: 'Recordatorio de evento', desc: 'Aviso 24 h antes del inicio de cada evento.' },
+              { key: 'resumenSemanal', label: 'Resumen semanal',     desc: 'Informe de ventas y asistencia cada lunes.' },
+              { key: 'alertaStock',    label: 'Alerta de stock',     desc: 'Aviso cuando quede menos del 10% de entradas.' },
+              { key: 'newsletter',     label: 'Novedades de la plataforma', desc: 'Actualizaciones, nuevas funciones y consejos.' },
+            ].map(({ key, label, desc }) => (
+              <div key={key} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">{label}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+                </div>
+                <button
+                  onClick={() => setNotif((n) => ({ ...n, [key]: !n[key as keyof typeof n] }))}
+                  className={`relative w-10 h-5.5 rounded-full transition-colors flex-shrink-0 ${(notif as Record<string, boolean>)[key] ? 'bg-violet-600' : 'bg-gray-200'}`}
+                  style={{ width: 40, height: 22 }}
+                >
+                  <span
+                    className="absolute top-0.5 left-0.5 w-[18px] h-[18px] rounded-full bg-white shadow transition-transform"
+                    style={{ transform: (notif as Record<string, boolean>)[key] ? 'translateX(18px)' : 'translateX(0)' }}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Tab: Seguridad ── */}
+      {tab === 'seguridad' && (
+        <div className="space-y-4">
+          {/* Change password */}
+          <form onSubmit={handlePwSave} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Lock size={16} className="text-violet-600" />
+              <h2 className="text-base font-bold text-gray-900">Cambiar Contraseña</h2>
+            </div>
+            {[
+              { label: 'Contraseña actual',        key: 'current', placeholder: '••••••••' },
+              { label: 'Nueva contraseña',         key: 'next',    placeholder: 'Mínimo 8 caracteres' },
+              { label: 'Confirmar nueva contraseña', key: 'confirm', placeholder: 'Repite la contraseña' },
+            ].map(({ label, key, placeholder }) => (
+              <div key={key}>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">{label}</label>
+                <input
+                  type="password"
+                  value={(pwForm as Record<string, string>)[key]}
+                  onChange={(e) => setPwForm((f) => ({ ...f, [key]: e.target.value }))}
+                  placeholder={placeholder}
+                  className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+                />
+              </div>
+            ))}
+            {pwMsg && (
+              <p className={`text-xs font-semibold ${pwMsg.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>{pwMsg.text}</p>
+            )}
+            <button
+              type="submit"
+              className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors"
+            >
+              <Lock size={14} /> Actualizar contraseña
+            </button>
+          </form>
+
+          {/* Danger zone */}
+          <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={16} className="text-red-500" />
+              <h2 className="text-base font-bold text-red-600">Zona de Peligro</h2>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">Estas acciones son irreversibles. Procede con precaución.</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Exportar todos los datos</p>
+                  <p className="text-xs text-gray-400">Descarga un ZIP con todos tus eventos y ventas.</p>
+                </div>
+                <button className="text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg transition-colors">
+                  Exportar
+                </button>
+              </div>
+              <div className="flex items-center justify-between py-3">
+                <div>
+                  <p className="text-sm font-semibold text-red-600">Eliminar cuenta</p>
+                  <p className="text-xs text-gray-400">Borra permanentemente la cuenta y todos sus datos.</p>
+                </div>
+                <button className="text-xs font-bold border border-red-300 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg transition-colors">
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

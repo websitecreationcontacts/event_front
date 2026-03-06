@@ -2,7 +2,7 @@ export default function CTASection() {
   return (
     <section className="py-20 px-8 bg-gradient-to-r from-violet-600 to-purple-700">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-3xl font-bold text-white mb-3">¿Organizas Eventos?</h2>
+        <h2 className="text-3xl font-bold text-white mb-3">¿Organizas <span style={{ fontFamily: "'Dancing Script', cursive", background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Eventos?</span></h2>
         <p className="text-white/80 text-base mb-8 max-w-md mx-auto">
           Publica tus eventos y llega a miles de personas interesadas
         </p>

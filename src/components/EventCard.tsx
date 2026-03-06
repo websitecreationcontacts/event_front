@@ -68,7 +68,7 @@ export default function EventCard({ event, variant = 'home' }: EventCardProps) {
           </span>
           <Link
             to={`/evento/${event.id}`}
-            className="bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+            className="btn-primary !text-xs !px-4 !py-2"
           >
             {event.buttonLabel}
           </Link>

@@ -126,7 +126,7 @@ export default function TrabajaPage() {
             {jobs.length} posiciones abiertas
           </span>
           <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-5">
-            Construye el Futuro<br />de los Eventos con Nosotros
+            Construye el Futuro<br /><span style={{ fontFamily: "'Dancing Script', cursive", background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>de los Eventos con Nosotros</span>
           </h1>
           <p className="text-white/75 text-base leading-relaxed max-w-xl mx-auto mb-8">
             En EventHub construimos tecnología que conecta personas con experiencias únicas. Buscamos personas apasionadas, curiosas y con ganas de impactar a millones de usuarios.
@@ -145,7 +145,7 @@ export default function TrabajaPage() {
       <section className="py-20 px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">¿Por Qué EventHub?</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">¿Por Qué <span className="title-accent">EventHub?</span></h2>
             <p className="text-gray-500 text-sm max-w-lg mx-auto">
               Ofrecemos mucho más que un buen salario. Creemos que el entorno importa tanto como el trabajo.
             </p>

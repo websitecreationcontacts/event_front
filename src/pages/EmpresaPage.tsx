@@ -267,15 +267,26 @@ export default function EmpresaPage() {
       <Navbar transparent={false} />
 
       {/* HERO */}
-      <section className="bg-gradient-to-br from-violet-700 via-purple-700 to-indigo-800 px-8 pt-16 pb-20">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative px-8 pt-16 pb-20 overflow-hidden min-h-[520px] flex flex-col justify-end">
+        {/* Background image */}
+        <img
+          src="https://images.unsplash.com/photo-1531058020387-3be344556be6?w=1600&h=700&fit=crop&auto=format"
+          alt="Organiza eventos"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-900/95 via-purple-900/80 to-indigo-900/60" />
+        {/* Extra bottom fade so stats read clearly */}
+        <div className="absolute inset-0 bg-gradient-to-t from-violet-900/60 via-transparent to-transparent" />
+
+        <div className="relative z-10 max-w-7xl mx-auto w-full">
           <div className="max-w-2xl mb-12">
             <span className="inline-flex items-center gap-1.5 bg-white/15 text-white text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
               <Zap size={12} />
               Para Organizadores
             </span>
             <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">
-              Impulsa Tus Eventos al<br />Siguiente Nivel
+              Impulsa Tus Eventos al<br /><span style={{ fontFamily: "'Dancing Script', cursive", background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Siguiente Nivel</span>
             </h1>
             <p className="text-white/75 text-base leading-relaxed mb-8">
               La plataforma líder para organizadores profesionales. Vende más entradas, gestiona mejor y llega a miles de personas con las herramientas más avanzadas del mercado.
@@ -300,12 +311,13 @@ export default function EmpresaPage() {
         </div>
       </section>
 
+
       {/* FEATURES */}
       <section className="py-20 px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-              ¿Por Qué Elegir EventHub?
+              ¿Por Qué Elegir <span className="title-accent">EventHub?</span>
             </h2>
             <p className="text-gray-500 text-sm max-w-xl mx-auto">
               Todo lo que necesitas para organizar eventos exitosos, en una sola plataforma.
@@ -327,7 +339,7 @@ export default function EmpresaPage() {
               Gestión
             </span>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-              Gestión Completa de Eventos
+              Gestión Completa de <span className="title-accent">Eventos</span>
             </h2>
             <p className="text-gray-500 text-sm leading-relaxed mb-6">
               Desde la creación hasta el análisis post-evento, nuestra plataforma te acompaña en cada paso. Configura tu evento en minutos y empieza a vender de inmediato.
@@ -398,7 +410,7 @@ export default function EmpresaPage() {
               Acceso Digital
             </span>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-              Control de Acceso Digital
+              Control de Acceso <span className="title-accent">Digital</span>
             </h2>
             <p className="text-gray-500 text-sm leading-relaxed mb-6">
               Olvídate de colas interminables y entradas físicas. Nuestro sistema de acceso digital valida entradas en segundos con un simple escaneo de QR.
@@ -423,7 +435,7 @@ export default function EmpresaPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-              Planes Flexibles para Cada Organizador
+              Planes Flexibles para Cada <span className="title-accent">Organizador</span>
             </h2>
             <p className="text-gray-500 text-sm max-w-lg mx-auto">
               Sin cuotas mensuales. Solo pagás una pequeña comisión por cada venta. Empieza gratis hoy.
@@ -445,7 +457,7 @@ export default function EmpresaPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-              Lo Que Dicen Nuestros Clientes
+              Lo Que Dicen Nuestros <span className="title-accent">Clientes</span>
             </h2>
             <p className="text-gray-500 text-sm max-w-xl mx-auto">
               Más de 10,000 organizadores ya confían en EventHub para gestionar sus eventos.
@@ -463,7 +475,7 @@ export default function EmpresaPage() {
       <section className="py-20 px-8 bg-gradient-to-br from-violet-700 via-purple-700 to-indigo-800">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">
-            ¿Listo para Crear Tu Próximo<br />Evento Exitoso?
+            ¿Listo para Crear Tu Próximo<br /><span style={{ fontFamily: "'Dancing Script', cursive", background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Evento Exitoso?</span>
           </h2>
           <p className="text-white/75 text-base mb-10 max-w-md mx-auto">
             Únete a miles de organizadores que ya están vendiendo más con EventHub.

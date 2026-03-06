@@ -158,7 +158,7 @@ export default function SobreNosotrosPage() {
             Nuestra historia
           </span>
           <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-5">
-            Conectamos Personas<br />a través de los Eventos
+            Conectamos Personas<br /><span style={{ fontFamily: "'Dancing Script', cursive", background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>a través de los Eventos</span>
           </h1>
           <p className="text-white/75 text-base leading-relaxed max-w-xl mx-auto">
             Fundada en 2018 en Madrid, EventHub nació con una convicción simple: descubrir y asistir a eventos increíbles debería ser fácil, seguro y accesible para todos.
@@ -206,7 +206,7 @@ export default function SobreNosotrosPage() {
       <section className="py-20 px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Nuestros Valores</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Nuestros <span className="title-accent">Valores</span></h2>
             <p className="text-gray-500 text-sm max-w-xl mx-auto">
               Los principios que guían cada decisión que tomamos, cada línea de código que escribimos y cada conversación con nuestros usuarios.
             </p>
@@ -232,7 +232,7 @@ export default function SobreNosotrosPage() {
       <section className="py-20 px-8 bg-gray-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Nuestra Historia</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">Nuestra <span className="title-accent">Historia</span></h2>
             <p className="text-gray-500 text-sm max-w-lg mx-auto">
               De una idea en un garaje madrileño a la plataforma líder del mercado. Este es nuestro camino.
             </p>
@@ -276,7 +276,7 @@ export default function SobreNosotrosPage() {
       <section className="py-20 px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">El Equipo</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">El <span className="title-accent">Equipo</span></h2>
             <p className="text-gray-500 text-sm max-w-xl mx-auto">
               Más de 80 personas trabajan cada día para hacer EventHub mejor. Conoce a quienes lideran el camino.
             </p>

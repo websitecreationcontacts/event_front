@@ -23,7 +23,7 @@ export default function EnterpriseBannerSection() {
               Para Organizadores
             </span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-white leading-tight mb-4">
-              Lleva tus eventos<br />al siguiente nivel
+              Lleva tus eventos<br /><span style={{ fontFamily: "'Dancing Script', cursive", background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>al siguiente nivel</span>
             </h2>
             <p className="text-white/70 text-base leading-relaxed mb-8 max-w-md mx-auto lg:mx-0">
               Publica, gestiona y vende entradas para tus eventos con las herramientas más potentes del mercado. Sin comisiones ocultas, sin complicaciones.

@@ -137,7 +137,7 @@ export default function CategoriasPage() {
             Más de 1,300 eventos disponibles
           </span>
           <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">
-            Explora por Categorías
+            Explora por <span style={{ fontFamily: "'Dancing Script', cursive", background: 'linear-gradient(135deg, #c4b5fd, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Categorías</span>
           </h1>
           <p className="text-white/75 text-base leading-relaxed max-w-xl mx-auto">
             Desde festivales de música hasta catas de vino. Encuentra el tipo de evento que más te apasiona y descubre lo mejor de tu ciudad.
@@ -149,7 +149,7 @@ export default function CategoriasPage() {
       <section className="py-16 px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Categorías Principales</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Categorías <span className="title-accent">Principales</span></h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -213,7 +213,7 @@ export default function CategoriasPage() {
       {/* SECONDARY CATEGORIES */}
       <section className="py-14 px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">Más Categorías</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">Más <span className="title-accent">Categorías</span></h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
             {secondaryCategories.map((cat) => {
               const Icon = cat.icon;

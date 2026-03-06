@@ -148,7 +148,7 @@ export default function WelcomePopup() {
             <div className="flex items-center gap-3">
               <button
                 onClick={close}
-                className="flex-1 bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 rounded-xl transition-colors text-sm flex items-center justify-center gap-2 shadow-md"
+                className="btn-primary flex-1 !font-bold !py-3 !text-sm flex items-center justify-center gap-2 !shadow-md"
               >
                 <Sparkles size={15} />
                 ¡Explorar ahora!

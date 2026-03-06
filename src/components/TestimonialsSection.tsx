@@ -74,7 +74,7 @@ export default function TestimonialsSection() {
           <span className="inline-block bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1.5 rounded-full mb-4 uppercase tracking-wider">
             Opiniones reales
           </span>
-          <h2 className="text-3xl font-extrabold text-gray-900 mb-3">Lo que dicen nuestros usuarios</h2>
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-3">Lo que dicen <span className="title-accent">nuestros usuarios</span></h2>
           <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
             <div className="flex gap-0.5">
               {Array.from({ length: 5 }).map((_, i) => (
