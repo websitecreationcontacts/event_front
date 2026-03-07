@@ -13,6 +13,8 @@ import {
   Users,
   DollarSign,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Search,
   Bell,
   Clock,
@@ -31,11 +33,15 @@ import {
   MapPin,
   Shield,
   Check,
+  X,
+  Tag,
+  UserRound,
 } from 'lucide-react';
 import {
   mockCompany,
   companyStats,
   companySales,
+  getEventDetail,
   type CompanyEvent,
   type CompanySale,
 } from '../data/mock';
@@ -46,6 +52,7 @@ const sidebarLinks = [
   { icon: <LayoutDashboard size={18} />, label: 'Dashboard', id: 'dashboard' },
   { icon: <CalendarDays size={18} />, label: 'Mis Eventos', id: 'eventos' },
   { icon: <TicketCheck size={18} />, label: 'Ventas', id: 'ventas' },
+  { icon: <Users size={18} />, label: 'Clientes', id: 'clientes' },
   { icon: <BarChart3 size={18} />, label: 'Analytics', id: 'analytics' },
   { icon: <Settings size={18} />, label: 'Configuración', id: 'config' },
 ];
@@ -142,6 +149,7 @@ export default function CompanyDashboardPage() {
     dashboard: <DashboardSection setSection={setActiveSection} events={allEvents} />,
     eventos:   <EventosSection filter={eventFilter} setFilter={setEventFilter} events={filteredEvents} showToast={showToast} />,
     ventas:    <VentasSection />,
+    clientes:  <ClientesSection />,
     analytics: <AnalyticsSection events={allEvents} />,
     config:    <ConfigSection />,
   };
@@ -433,6 +441,13 @@ function EventosSection({ filter, setFilter, events, showToast }: {
   events: CompanyEvent[]; showToast: (m: string, t?: 'success'|'error'|'info') => void;
 }) {
   const navigate = useNavigate();
+  const [previewEvent, setPreviewEvent] = useState<CompanyEvent | null>(null);
+  const [managingEvent, setManagingEvent] = useState<CompanyEvent | null>(null);
+
+  if (managingEvent) {
+    return <EventManagementView event={managingEvent} onBack={() => setManagingEvent(null)} navigate={navigate} showToast={showToast} />;
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -475,7 +490,12 @@ function EventosSection({ filter, setFilter, events, showToast }: {
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-2.5">
                     <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full text-white flex-shrink-0 ${ev.categoryColor}`}>{ev.category[0]}</span>
-                    <p className="font-semibold text-gray-800 text-sm">{ev.title}</p>
+                    <button
+                      onClick={() => setManagingEvent(ev)}
+                      className="font-semibold text-gray-800 text-sm hover:text-violet-600 transition-colors text-left"
+                    >
+                      {ev.title}
+                    </button>
                   </div>
                 </td>
                 <td className="px-4 py-3.5">
@@ -497,9 +517,9 @@ function EventosSection({ filter, setFilter, events, showToast }: {
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => showToast('Vista previa no disponible aún', 'info')}
+                      onClick={() => setPreviewEvent(ev)}
                       className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Ver"
+                      title="Vista previa"
                     >
                       <Eye size={14} />
                     </button>
@@ -510,6 +530,13 @@ function EventosSection({ filter, setFilter, events, showToast }: {
                     >
                       <FileEdit size={14} />
                     </button>
+                    <button
+                      onClick={() => setManagingEvent(ev)}
+                      className="w-7 h-7 rounded-lg hover:bg-violet-50 flex items-center justify-center text-gray-400 hover:text-violet-600 transition-colors"
+                      title="Gestionar"
+                    >
+                      <ChevronRight size={14} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -518,6 +545,667 @@ function EventosSection({ filter, setFilter, events, showToast }: {
         </table>
         {events.length === 0 && (
           <p className="text-sm text-gray-400 text-center py-12">No hay eventos para este filtro</p>
+        )}
+      </div>
+
+      {/* Preview Modal */}
+      {previewEvent && (
+        <EventPreviewModal event={previewEvent} onClose={() => setPreviewEvent(null)} />
+      )}
+    </div>
+  );
+}
+
+// ── Event Preview Modal ────────────────────────────────────────────────────────
+const DEFAULT_EVENT_IMAGES: Record<string, string> = {
+  Música: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=340&fit=crop&auto=format',
+  Conferencia: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=340&fit=crop&auto=format',
+  Concierto: 'https://images.unsplash.com/photo-1501612780327-45045538702b?w=800&h=340&fit=crop&auto=format',
+  Deportes: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=340&fit=crop&auto=format',
+  Arte: 'https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=800&h=340&fit=crop&auto=format',
+  Gastronomía: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&h=340&fit=crop&auto=format',
+  Jazz: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&h=340&fit=crop&auto=format',
+  Tecnología: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=340&fit=crop&auto=format',
+  Corporativo: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&h=340&fit=crop&auto=format',
+};
+
+function EventPreviewModal({ event: ev, onClose }: { event: CompanyEvent; onClose: () => void }) {
+  const detail = getEventDetail(ev.id);
+  const heroImg = ev.image || DEFAULT_EVENT_IMAGES[ev.category] || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=340&fit=crop&auto=format';
+  const tickets = detail?.tickets ?? [{ id: 't1', name: 'Entrada General', description: 'Acceso estándar', price: ev.price ?? 0, available: ev.ticketsTotal - ev.ticketsSold }];
+  const pct = Math.round((ev.ticketsSold / ev.ticketsTotal) * 100);
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Hero image */}
+        <div className="relative">
+          <img src={heroImg} alt={ev.title} className="w-full h-52 object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition-colors"
+          >
+            <X size={16} />
+          </button>
+          <div className="absolute top-3 left-3">
+            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full text-white uppercase tracking-wide ${ev.categoryColor}`}>
+              {ev.category}
+            </span>
+          </div>
+          <div className="absolute bottom-4 left-5 right-5">
+            <h2 className="text-xl font-extrabold text-white leading-tight">{ev.title}</h2>
+            <p className="text-white/70 text-sm mt-0.5 flex items-center gap-1.5">
+              <MapPin size={12} />{ev.venue}, {ev.city}
+            </p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-5">
+          {/* Info row */}
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
+                <CalendarDays size={15} className="text-violet-500" />
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-400 font-medium">Fecha</p>
+                <p className="font-semibold text-gray-800">{ev.date}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <MapPin size={15} className="text-blue-500" />
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-400 font-medium">Lugar</p>
+                <p className="font-semibold text-gray-800">{ev.venue}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                <Users size={15} className="text-green-500" />
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-400 font-medium">Aforo</p>
+                <p className="font-semibold text-gray-800">{ev.ticketsSold} / {ev.ticketsTotal} <span className="text-gray-400 font-normal">({pct}%)</span></p>
+              </div>
+            </div>
+          </div>
+
+          {/* Capacity bar */}
+          <div>
+            <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+              <span>Ocupación</span>
+              <span className="font-semibold">{pct}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-gray-100">
+              <div
+                className={`h-full rounded-full transition-all ${pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-violet-500' : 'bg-amber-400'}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          {(detail?.description ?? ev.description) && (
+            <div>
+              <p className="text-sm font-bold text-gray-900 mb-2">Descripción</p>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {Array.isArray(detail?.description) ? detail!.description[0] : (ev.description ?? '')}
+              </p>
+            </div>
+          )}
+
+          {/* Tickets */}
+          <div>
+            <p className="text-sm font-bold text-gray-900 mb-3">Tipos de Entrada</p>
+            <div className="space-y-2">
+              {tickets.map((t) => (
+                <div key={t.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+                      <Tag size={14} className="text-violet-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{t.name}</p>
+                      <p className="text-xs text-gray-400">{t.description}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-extrabold text-gray-900">{t.price === 0 ? 'Gratis' : `${t.price}€`}</p>
+                    <p className="text-[11px] text-gray-400">{t.available} disponibles</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer note */}
+          <p className="text-[11px] text-center text-gray-400 border-t border-gray-100 pt-4">
+            Vista previa · Solo lectura — los cambios deben hacerse desde "Editar"
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Event Management View ──────────────────────────────────────────────────────
+function EventManagementView({ event: ev, onBack, navigate, showToast }: {
+  event: CompanyEvent;
+  onBack: () => void;
+  navigate: ReturnType<typeof useNavigate>;
+  showToast: (m: string, t?: 'success'|'error'|'info') => void;
+}) {
+  const detail = getEventDetail(ev.id);
+  const heroImg = ev.image || DEFAULT_EVENT_IMAGES[ev.category] || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=340&fit=crop&auto=format';
+  const tickets = detail?.tickets ?? [{ id: 't1', name: 'Entrada General', description: 'Acceso estándar', price: ev.price ?? 0, available: ev.ticketsTotal - ev.ticketsSold }];
+  const pct = Math.round((ev.ticketsSold / ev.ticketsTotal) * 100);
+
+  // Filter sales for this event
+  const eventSales = companySales.filter((s) => s.event === ev.title);
+
+  const [buyersSearch, setBuyersSearch] = useState('');
+  const filteredBuyers = eventSales.filter((s) => {
+    const q = buyersSearch.toLowerCase();
+    return q === '' || s.buyer.toLowerCase().includes(q) || s.email.toLowerCase().includes(q);
+  });
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl font-extrabold text-gray-900 truncate">{ev.title}</h1>
+            <EventStatusBadge status={ev.status} />
+          </div>
+          <p className="text-sm text-gray-400 mt-0.5">{ev.date} · {ev.venue}, {ev.city}</p>
+        </div>
+        <button
+          onClick={() => navigate(`/empresa/editar-evento/${ev.id}`)}
+          className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow transition-colors flex-shrink-0"
+        >
+          <FileEdit size={15} />
+          Editar Evento
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-semibold text-gray-400 mb-1">Tickets Vendidos</p>
+          <p className="text-2xl font-extrabold text-gray-900">{ev.ticketsSold}</p>
+          <p className="text-xs text-gray-400">de {ev.ticketsTotal} disponibles</p>
+          <div className="mt-2 h-1.5 rounded-full bg-gray-100">
+            <div className={`h-full rounded-full ${pct >= 80 ? 'bg-green-500' : 'bg-violet-500'}`} style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-semibold text-gray-400 mb-1">Ingresos</p>
+          <p className="text-2xl font-extrabold text-gray-900">€{ev.revenue.toLocaleString()}</p>
+          <p className="text-xs text-gray-400">total recaudado</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-semibold text-gray-400 mb-1">Ocupación</p>
+          <p className="text-2xl font-extrabold text-gray-900">{pct}%</p>
+          <p className="text-xs text-gray-400">{ev.ticketsTotal - ev.ticketsSold} plazas libres</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xs font-semibold text-gray-400 mb-1">Compradores</p>
+          <p className="text-2xl font-extrabold text-gray-900">{eventSales.length}</p>
+          <p className="text-xs text-gray-400">transacciones</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col xl:flex-row gap-5">
+        {/* Left: Ticket types */}
+        <div className="xl:w-72 flex-shrink-0 space-y-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="relative">
+              <img src={heroImg} alt={ev.title} className="w-full h-32 object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <span className={`absolute top-2 left-2 text-[11px] font-bold px-2 py-0.5 rounded-full text-white ${ev.categoryColor}`}>{ev.category}</span>
+            </div>
+            <div className="p-4">
+              <p className="text-sm font-bold text-gray-900 mb-3">Tipos de Entrada</p>
+              <div className="space-y-2">
+                {tickets.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Tag size={13} className="text-violet-500 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-gray-800 truncate">{t.name}</p>
+                        <p className="text-[11px] text-gray-400">{t.available} disp.</p>
+                      </div>
+                    </div>
+                    <p className="text-sm font-extrabold text-gray-900 flex-shrink-0 ml-2">{t.price === 0 ? 'Gratis' : `${t.price}€`}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <p className="text-sm font-bold text-gray-900 mb-3">Acciones</p>
+            <div className="space-y-2">
+              <button
+                onClick={() => navigate(`/empresa/editar-evento/${ev.id}`)}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+              >
+                <FileEdit size={14} />Editar Evento
+              </button>
+              <button
+                onClick={() => showToast('Exportando lista de compradores…', 'info')}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <TrendingUp size={14} />Exportar Compradores
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Buyers list */}
+        <div className="flex-1 min-w-0">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+              <p className="text-sm font-bold text-gray-900 flex-1">Compradores</p>
+              <div className="relative">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar…"
+                  value={buyersSearch}
+                  onChange={(e) => setBuyersSearch(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-violet-400 transition-colors w-44"
+                />
+              </div>
+            </div>
+
+            {filteredBuyers.length > 0 ? (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    {['Comprador', 'Email', 'Importe', 'Fecha', 'Estado'].map((h) => (
+                      <th key={h} className="text-left px-4 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filteredBuyers.map((sale) => (
+                    <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-600 flex-shrink-0">
+                            {sale.buyer.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                          </div>
+                          <p className="text-xs font-semibold text-gray-800">{sale.buyer}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-xs text-gray-500">{sale.email}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className={`text-xs font-bold ${sale.status === 'reembolsado' ? 'text-red-400' : 'text-gray-800'}`}>
+                          {sale.status === 'reembolsado' ? '-' : '+'}€{sale.amount}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-xs text-gray-400">{sale.date}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <SaleBadge status={sale.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="py-14 text-center">
+                <UserRound size={32} className="text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-400">
+                  {buyersSearch ? 'No se encontraron resultados' : 'Aún no hay compradores para este evento'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Clientes section ──────────────────────────────────────────────────────────
+
+type EmailLogStatus = 'enviado' | 'abierto' | 'rebotado';
+type EmailLogType = 'Confirmación' | 'Ticket' | 'Recordatorio' | 'Reembolso' | 'Marketing';
+interface EmailLog {
+  id: string;
+  subject: string;
+  date: string;
+  type: EmailLogType;
+  status: EmailLogStatus;
+}
+
+const mockEmailHistory: Record<string, EmailLog[]> = {
+  'carlos.m@email.com': [
+    { id: 'em-1',  subject: 'Confirmación de compra – Festival Electrónico Madrid', date: 'Hace 5 min',    type: 'Confirmación',  status: 'enviado' },
+    { id: 'em-2',  subject: 'Tus entradas están listas – Festival Electrónico Madrid', date: 'Hace 5 min', type: 'Ticket',        status: 'enviado' },
+    { id: 'em-3',  subject: '¡Te esperamos mañana! – Festival Electrónico Madrid',    date: 'Hace 1 día',  type: 'Recordatorio',  status: 'abierto' },
+    { id: 'em-4',  subject: 'Novedades de Infinity Events – Nuevos eventos disponibles', date: 'Hace 1 semana', type: 'Marketing', status: 'abierto' },
+  ],
+  'laura.s@email.com': [
+    { id: 'em-5',  subject: 'Confirmación de compra – Tech Summit 2024',   date: 'Hace 23 min',   type: 'Confirmación', status: 'enviado' },
+    { id: 'em-6',  subject: 'Tu entrada para Tech Summit 2024',            date: 'Hace 23 min',   type: 'Ticket',       status: 'enviado' },
+    { id: 'em-7',  subject: 'Novedades de Infinity Events – Nuevos eventos', date: 'Hace 1 semana', type: 'Marketing',  status: 'rebotado' },
+  ],
+  'david.l@email.com': [
+    { id: 'em-8',  subject: 'Confirmación de compra – Festival Electrónico Madrid', date: 'Hace 1h', type: 'Confirmación', status: 'abierto' },
+    { id: 'em-9',  subject: 'Tus 3 entradas para Festival Electrónico Madrid',      date: 'Hace 1h', type: 'Ticket',       status: 'abierto' },
+  ],
+  'ana.r@email.com': [
+    { id: 'em-10', subject: 'Compra pendiente de confirmación – Summer House Festival', date: 'Hace 2h', type: 'Confirmación',  status: 'enviado' },
+    { id: 'em-11', subject: 'Recordatorio: Confirma tu pago – Summer House Festival',   date: 'Hace 1h', type: 'Recordatorio',  status: 'enviado' },
+  ],
+  'miguel.t@email.com': [
+    { id: 'em-12', subject: 'Confirmación de compra – Trance Evolution',      date: 'Hace 4h', type: 'Confirmación', status: 'abierto' },
+    { id: 'em-13', subject: 'Tu reembolso está en camino – Trance Evolution', date: 'Hace 3h', type: 'Reembolso',    status: 'enviado' },
+  ],
+  'sofia.g@email.com': [
+    { id: 'em-14', subject: 'Confirmación de compra – Tech Summit 2024',       date: 'Ayer',        type: 'Confirmación', status: 'abierto' },
+    { id: 'em-15', subject: 'Tus 2 entradas para Tech Summit 2024',            date: 'Ayer',        type: 'Ticket',       status: 'abierto' },
+    { id: 'em-16', subject: 'Novedades de Infinity Events – Nuevos eventos',   date: 'Hace 1 semana', type: 'Marketing',  status: 'enviado' },
+  ],
+};
+
+// Derive a unified client list from companySales
+interface ClientRow {
+  buyer: string;
+  email: string;
+  purchases: CompanySale[];
+  totalSpent: number;
+  totalTickets: number;
+  totalEvents: number;
+  lastPurchase: string;
+}
+
+function buildClients(): ClientRow[] {
+  const map = new Map<string, ClientRow>();
+  for (const s of companySales) {
+    if (!map.has(s.email)) {
+      map.set(s.email, { buyer: s.buyer, email: s.email, purchases: [], totalSpent: 0, totalTickets: 0, totalEvents: 0, lastPurchase: s.date });
+    }
+    const c = map.get(s.email)!;
+    c.purchases.push(s);
+    if (s.status !== 'reembolsado') c.totalSpent += s.amount;
+    c.totalTickets += s.tickets;
+  }
+  return Array.from(map.values()).map((c) => ({
+    ...c,
+    totalEvents: new Set(c.purchases.map((p) => p.event)).size,
+    lastPurchase: c.purchases[0]?.date ?? '–',
+  }));
+}
+
+const emailLogTypeMeta: Record<EmailLogType, { color: string; bg: string }> = {
+  Confirmación: { color: 'text-blue-700',   bg: 'bg-blue-50' },
+  Ticket:       { color: 'text-violet-700', bg: 'bg-violet-50' },
+  Recordatorio: { color: 'text-amber-700',  bg: 'bg-amber-50' },
+  Reembolso:    { color: 'text-red-600',    bg: 'bg-red-50' },
+  Marketing:    { color: 'text-gray-600',   bg: 'bg-gray-100' },
+};
+
+const emailStatusMeta: Record<EmailLogStatus, { label: string; color: string }> = {
+  enviado:  { label: 'Enviado',  color: 'text-blue-600' },
+  abierto:  { label: 'Abierto',  color: 'text-green-600' },
+  rebotado: { label: 'Rebotado', color: 'text-red-500' },
+};
+
+// ── Client detail view ────────────────────────────────────────────────────────
+function ClientDetailView({ client, onBack }: { client: ClientRow; onBack: () => void }) {
+  const initials = client.buyer.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  const emailLogs = mockEmailHistory[client.email] ?? [];
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onBack}
+          className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <h1 className="text-xl font-extrabold text-gray-900">Detalle de Cliente</h1>
+      </div>
+
+      {/* Client card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col sm:flex-row items-start gap-5">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xl font-extrabold flex-shrink-0">
+          {initials}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h2 className="text-lg font-extrabold text-gray-900">{client.buyer}</h2>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Cliente Activo</span>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+            <span className="flex items-center gap-1.5"><Mail size={13} className="text-gray-400" />{client.email}</span>
+            <span className="flex items-center gap-1.5"><CalendarDays size={13} className="text-gray-400" />Primer contacto: {client.purchases[client.purchases.length - 1]?.date ?? '–'}</span>
+          </div>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-2xl font-extrabold text-gray-900">€{client.totalSpent}</p>
+          <p className="text-xs text-gray-400 font-medium">total gastado</p>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {[
+          { label: 'Eventos',          value: client.totalEvents,  icon: <CalendarDays size={18} />, bg: 'bg-violet-50', color: 'text-violet-600' },
+          { label: 'Tickets Comprados', value: client.totalTickets, icon: <TicketCheck size={18} />,  bg: 'bg-green-50',  color: 'text-green-600' },
+          { label: 'Total Gastado',    value: `€${client.totalSpent}`, icon: <DollarSign size={18} />, bg: 'bg-blue-50', color: 'text-blue-600' },
+          { label: 'Última Compra',    value: client.lastPurchase,  icon: <Clock size={18} />,        bg: 'bg-orange-50', color: 'text-orange-500' },
+        ].map(({ label, value, icon, bg, color }) => (
+          <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className={`w-9 h-9 rounded-xl ${bg} ${color} flex items-center justify-center mb-2`}>{icon}</div>
+            <p className="text-xl font-extrabold text-gray-900">{value}</p>
+            <p className="text-xs text-gray-400 font-semibold mt-0.5">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        {/* Purchases */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <p className="text-sm font-bold text-gray-900">Historial de Compras</p>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {client.purchases.map((sale) => (
+              <div key={sale.id} className="px-5 py-3.5 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+                  <TicketCheck size={15} className="text-violet-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{sale.event}</p>
+                  <p className="text-xs text-gray-400">{sale.tickets} ticket{sale.tickets > 1 ? 's' : ''} · {sale.date}</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className={`text-sm font-bold ${sale.status === 'reembolsado' ? 'text-red-400 line-through' : 'text-gray-900'}`}>
+                    €{sale.amount}
+                  </p>
+                  <SaleBadge status={sale.status} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Email history */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <p className="text-sm font-bold text-gray-900">Historial de Correos</p>
+            <span className="text-xs text-gray-400">{emailLogs.length} email{emailLogs.length !== 1 ? 's' : ''}</span>
+          </div>
+          {emailLogs.length > 0 ? (
+            <div className="divide-y divide-gray-50">
+              {emailLogs.map((log) => {
+                const typeMeta = emailLogTypeMeta[log.type];
+                const statusM = emailStatusMeta[log.status];
+                return (
+                  <div key={log.id} className="px-5 py-3.5 flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-lg ${typeMeta.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      <Mail size={14} className={typeMeta.color} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 leading-snug">{log.subject}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md ${typeMeta.bg} ${typeMeta.color}`}>{log.type}</span>
+                        <span className="text-[11px] text-gray-400">{log.date}</span>
+                      </div>
+                    </div>
+                    <span className={`text-[11px] font-bold flex-shrink-0 ${statusM.color}`}>{statusM.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-10 text-center">
+              <Mail size={28} className="text-gray-200 mx-auto mb-2" />
+              <p className="text-sm text-gray-400">Sin historial de correos</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Clientes list ─────────────────────────────────────────────────────────────
+function ClientesSection() {
+  const [search, setSearch] = useState('');
+  const [selectedClient, setSelectedClient] = useState<ClientRow | null>(null);
+  const clients = buildClients();
+
+  if (selectedClient) {
+    return <ClientDetailView client={selectedClient} onBack={() => setSelectedClient(null)} />;
+  }
+
+  const filtered = clients.filter((c) => {
+    const q = search.toLowerCase();
+    return q === '' || c.buyer.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
+  });
+
+  const totalRevenue = clients.reduce((a, c) => a + c.totalSpent, 0);
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900">Clientes</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{clients.length} clientes únicos · €{totalRevenue.toLocaleString()} recaudados</p>
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+          <p className="text-2xl font-extrabold text-violet-600">{clients.length}</p>
+          <p className="text-xs text-gray-500 font-semibold mt-0.5">Clientes Únicos</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+          <p className="text-2xl font-extrabold text-green-600">€{Math.round(totalRevenue / (clients.length || 1))}</p>
+          <p className="text-xs text-gray-500 font-semibold mt-0.5">Gasto Medio</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
+          <p className="text-2xl font-extrabold text-blue-600">{clients.reduce((a, c) => a + c.totalTickets, 0)}</p>
+          <p className="text-xs text-gray-500 font-semibold mt-0.5">Tickets Totales</p>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div className="relative max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o email…"
+            className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-violet-400 transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50">
+              {['Cliente', 'Email', 'Eventos', 'Tickets', 'Total Gastado', 'Última Compra', ''].map((h) => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {filtered.map((client) => {
+              const initials = client.buyer.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+              return (
+                <tr
+                  key={client.email}
+                  className="hover:bg-violet-50/30 transition-colors cursor-pointer"
+                  onClick={() => setSelectedClient(client)}
+                >
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        {initials}
+                      </div>
+                      <p className="font-semibold text-gray-800">{client.buyer}</p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <p className="text-xs text-gray-500">{client.email}</p>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <p className="text-sm font-semibold text-gray-700">{client.totalEvents}</p>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <p className="text-sm font-semibold text-gray-700">{client.totalTickets}</p>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <p className="text-sm font-bold text-gray-900">€{client.totalSpent}</p>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <p className="text-xs text-gray-400">{client.lastPurchase}</p>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <ChevronRight size={16} className="text-gray-300" />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {filtered.length === 0 && (
+          <div className="py-14 text-center">
+            <Users size={32} className="text-gray-200 mx-auto mb-3" />
+            <p className="text-sm text-gray-400">No se encontraron clientes</p>
+          </div>
         )}
       </div>
     </div>

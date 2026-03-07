@@ -110,7 +110,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                   </>
                 ) : (
                   <>
-                    <Link to="/usuario" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setOpen(false)}>
+                    <Link to="/perfil" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setOpen(false)}>
                       <User size={14} className="text-gray-400" />
                       Mi Perfil
                     </Link>
